@@ -188,7 +188,7 @@ These instructions show how to deploy a very simple web application that uses a 
     web          10.44.0.1:5000   26m
     ```
 
-14. Hop back on the web node and check things output - you can use ctrl-C to stop the ping process instead of waiting.
+14. Hop back on the web node and check things out - you can use ctrl-C to stop the ping process instead of waiting.
 
     ```
     kubectl exec -it web bash
