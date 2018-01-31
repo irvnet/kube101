@@ -4,7 +4,7 @@ These instructions show how to deploy a very simple web application that uses a 
 
 ## Initial set up
 
-1.  In a browser, open the [kubernetes playground](http://labs.play-with-k8s.com/) and confirm you are not a robot.
+1.  In a browser, open the [kubernetes playground](http://labs.play-with-k8s.com/) and log in using either a Docker Hub id or a GitHub id. Then click on **Start**.
 
 2.  Click on **ADD NEW INSTANCE** to set up your first node. Make a note of the IP address shown when it starts. Replace `10.0.10.4` in the command examples using curl with your node1 IP address.
 
@@ -25,12 +25,12 @@ These instructions show how to deploy a very simple web application that uses a 
     "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
     ```
 
-5.  Check status
+5.  Check status, repeat until the master shows "Ready"
 
     ```
     kubectl get nodes
-    NAME      STATUS    AGE       VERSION
-    node1     Ready     5m        v1.7.0
+    NAME      STATUS     ROLES     AGE       VERSION
+    node1     Ready      master    1m       v1.8.4
     ```
 
 6.  Add another node
@@ -47,9 +47,9 @@ These instructions show how to deploy a very simple web application that uses a 
 
     ```
     kubectl get nodes
-    NAME      STATUS    AGE       VERSION
-    node1     Ready     16m       v1.7.0
-    node2     Ready     2m        v1.7.0
+    NNAME      STATUS    ROLES     AGE       VERSION
+    node1     Ready     master    2m        v1.8.4
+    node2     Ready     <none>    38s       v1.8.4
     ```
 
 ## Getting the application running
@@ -66,7 +66,7 @@ These instructions show how to deploy a very simple web application that uses a 
 
     > The source code and Dockerfile for the pod are located in the `web` folder.
 
-2.  Check on status of the pod
+2.  Check on status of the pod, wait until it shows "Running"
 
     ```
     kubectl get pod web
@@ -81,13 +81,15 @@ These instructions show how to deploy a very simple web application that uses a 
     root@web:/usr/src/app#
     ```
 
-4.  Check on the app locally using curl (this will take a little while)
+4.  Check on the app locally using curl (this will take a little while for the tcp timeout)
 
     ```
     curl 127.0.0.1:5000
     // a lot of html output ending with:
     ConnectionError: Error -2 connecting to redis:6379. Name or service not known.
     ```
+
+    leave the bash shell on the web pod using **exit**.
 
 5.  Let's make the application available within the cluster using a service
 
@@ -111,7 +113,7 @@ These instructions show how to deploy a very simple web application that uses a 
     web       10.109.9.17   <nodes>       5000:31000/TCP   2m
     ```
 
-7.  Use curl from the node to reach one of the cluster node 10. IP addresses (or click on the port shown in the )
+7.  Use curl from the node to reach one of the cluster node 10. or 192. IP addresses (or click on the port 31000 button shown in the browser )
 
     ```
     node1 $ curl 10.0.10.4:31000
@@ -121,7 +123,7 @@ These instructions show how to deploy a very simple web application that uses a 
 
     and there is a similar response in the browser tab
 
-8.  Add redis as a pod
+8.  Add redis as a pod. First create the yaml for the pod, then use kubectl to create the pod.
 
     ```
     cat > dbpod.yaml
@@ -131,7 +133,7 @@ These instructions show how to deploy a very simple web application that uses a 
     pod "redis" created
     ```
 
-9.  Check on pods status, get a little more detail
+9.  Check on pods status, get a little more detail with the `-o wide` option
 
     ```
     kubectl get pods -o wide
@@ -153,7 +155,7 @@ These instructions show how to deploy a very simple web application that uses a 
     "test-only"
     ```
 
-    Exit out of the redis-cli and back out of the pod.
+    Exit out of the redis-cli and back out of the pod to return to the node prompt.
 
 
 11. Add a service for redis
@@ -188,7 +190,7 @@ These instructions show how to deploy a very simple web application that uses a 
     web          10.44.0.1:5000   26m
     ```
 
-14. Hop back on the web node and check things out - you can use ctrl-C to stop the ping process instead of waiting.
+14. The endpoint corresponds to a name available within the cluster DNS namespace. You can go on the web node and confirm this with ping. The command will resolve the endpoint IP address and try sending an echo request packet. You can use ctrl-C to stop the ping process instead of waiting.
 
     ```
     kubectl exec -it web bash
@@ -241,7 +243,7 @@ These instructions show how to deploy a very simple web application that uses a 
 
     Both web pods are running on node2. The first node (aka the cluster master) is running a number of containers to support the pod. To keep node 1 from running out of resources, it is marked with a node role of "NoSchedule" which limits further pod deployments.
 
-19. Test it out again
+19. Test it out again, trying multiple times.
 
     ```
     kubectl get endpoints
@@ -256,7 +258,7 @@ These instructions show how to deploy a very simple web application that uses a 
     Hello Container World from web-829031562-52q56! I have been seen 4 times.
     ```
 
-    > Traffic to the web pods is being distributed in a round-robin fashion from the service NodePort.
+    > Traffic to the web pods is being distributed in a relatively arbitrary fashion from the service NodePort.
 
 ## Experimenting with scalability and resiliency
 
@@ -386,7 +388,7 @@ These instructions show how to deploy a very simple web application that uses a 
     web-829031562-wx281   1/1       Terminating         0          58m
     ```
 
-9.  Scale back, edit the webdep.yaml file changing back to 2 or 3 replicas and then re-apply.
+9.  To scale back, edit the webdep.yaml file changing back to 2 or 3 replicas and then re-apply.
 
     ```
     kubectl apply -f webdep.yaml
